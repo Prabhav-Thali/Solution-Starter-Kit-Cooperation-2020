@@ -4,9 +4,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const assistant = require('./lib/assistant.js');
+
 const port = process.env.PORT || 3000
 
 const cloudant = require('./lib/cloudant.js');
+const donor= require('./lib/cloudant_donors.js');
+const vendor= require('./lib/cloudant_vendors.js');
+const volunteer= require('./lib/cloudant_volunteers.js');
 
 const app = express();
 app.use(bodyParser.json());
@@ -33,6 +37,42 @@ const testConnections = () => {
     .catch(err => {
       console.error(err);
       status['cloudant'] = 'failed';
+      return status
+    })
+    .then(status => {
+      return donor.info();
+    })
+    .then(info => {
+      status['donor'] = 'ok';
+      return status
+    })
+    .catch(err => {
+      console.error(err);
+      status['donor'] = 'failed';
+      return status
+    })
+    .then(status => {
+      return vendor.info();
+    })
+    .then(info => {
+      status['vendor'] = 'ok';
+      return status
+    })
+    .catch(err => {
+      console.error(err);
+      status['vendor'] = 'failed';
+      return status
+    })
+    .then(status => {
+      return volunteer.info();
+    })
+    .then(info => {
+      status['volunteer'] = 'ok';
+      return status
+    })
+    .catch(err => {
+      console.error(err);
+      status['volunteer'] = 'failed';
       return status
     });
 };
@@ -141,7 +181,7 @@ app.post('/api/message', (req, res) => {
  *
  * A list of resource objects will be returned (which can be an empty list)
  */
-app.get('/get/requests', (req, res) => {
+app.get('/request/list', (req, res) => {
   cloudant
     .find()
     .then(data => {
@@ -155,14 +195,67 @@ app.get('/get/requests', (req, res) => {
 });
 
 /**
- * Create a new resource
+ * Get a list of vendors
+ *
+ * A list of resource objects will be returned (which can be an empty list)
+ */
+app.get('/vendor/list', (req, res) => {
+  vendor
+    .find()
+    .then(data => {
+      if (data.statusCode != 200) {
+        res.sendStatus(data.statusCode)
+      } else {
+        res.send(data.data)
+      }
+    })
+    .catch(err => handleError(res, err));
+});
+
+/**
+ * Get a list of donors
+ *
+ * A list of resource objects will be returned (which can be an empty list)
+ */
+app.get('/donor/list', (req, res) => {
+  donor
+    .find()
+    .then(data => {
+      if (data.statusCode != 200) {
+        res.sendStatus(data.statusCode)
+      } else {
+        res.send(data.data)
+      }
+    })
+    .catch(err => handleError(res, err));
+});
+
+/**
+ * Get a list of volunteers
+ *
+ * A list of resource objects will be returned (which can be an empty list)
+ */
+app.get('/volunteer/list', (req, res) => {
+  volunteer
+    .find()
+    .then(data => {
+      if (data.statusCode != 200) {
+        res.sendStatus(data.statusCode)
+      } else {
+        res.send(data.data)
+      }
+    })
+    .catch(err => handleError(res, err));
+});
+
+/**
+ * Create a new request
  *
  * The body must contain:
  * 
  * - type
  * - name
  * - contact
- * - userID
  *
  * The body may also contain:
  * 
@@ -172,7 +265,7 @@ app.get('/get/requests', (req, res) => {
  * The ID and rev of the resource will be returned if successful
  */
 let types = ["Food", "Other", "Medical"]
-app.post('/create/request', (req, res) => {
+app.post('/request/add', (req, res) => {
   if (!req.body.type) {
     return res.status(422).json({ errors: "Type of item must be provided"});
   }
@@ -191,10 +284,79 @@ app.post('/create/request', (req, res) => {
   const quantity = req.body.quantity || 1;
   const state = req.body.state || '';
   const district = req.body.district || '';
+  const geopoint = req.body.geopoint || '';
   const contact = req.body.contact;
 
   cloudant
-    .create(type, name, description, quantity, state, district, contact)
+    .create(type, name, description, quantity, state, district, contact, geopoint)
+    .then(data => {
+      if (data.statusCode != 201) {
+        res.sendStatus(data.statusCode)
+      } else {
+        res.send(data.data)
+      }
+    })
+    .catch(err => handleError(res, err));
+});
+
+app.post('/donor/add', (req, res) => {
+  if (!req.body.type) {
+    return res.status(422).json({ errors: "Type of item must be provided"});
+  }
+  if (!types.includes(req.body.type)) {
+    return res.status(422).json({ errors: "Type of item must be one of " + types.toString()});
+  }
+  if (!req.body.name) {
+    return res.status(422).json({ errors: "Name of item must be provided"});
+  }
+  if (!req.body.contact) {
+    return res.status(422).json({ errors: "A method of conact must be provided"});
+  }
+  const type = req.body.type;
+  const name = req.body.name;
+  const description = req.body.description || '';
+  const quantity = req.body.quantity || 1;
+  const state = req.body.state || '';
+  const district = req.body.district || '';
+  const geopoint = req.body.geopoint || '';
+  const contact = req.body.contact;
+
+  donor
+    .create(type, name, description, quantity, state, district, contact, geopoint)
+    .then(data => {
+      if (data.statusCode != 201) {
+        res.sendStatus(data.statusCode)
+      } else {
+        res.send(data.data)
+      }
+    })
+    .catch(err => handleError(res, err));
+});
+
+app.post('/vendor/add', (req, res) => {
+  if (!req.body.type) {
+    return res.status(422).json({ errors: "Type of item must be provided"});
+  }
+  if (!types.includes(req.body.type)) {
+    return res.status(422).json({ errors: "Type of item must be one of " + types.toString()});
+  }
+  if (!req.body.name) {
+    return res.status(422).json({ errors: "Name of item must be provided"});
+  }
+  if (!req.body.contact) {
+    return res.status(422).json({ errors: "A method of conact must be provided"});
+  }
+  const type = req.body.type;
+  const name = req.body.name;
+  const description = req.body.description || '';
+  const quantity = req.body.quantity || 1;
+  const state = req.body.state || '';
+  const district = req.body.district || '';
+  const geopoint = req.body.geopoint || '';
+  const contact = req.body.contact;
+
+  vendor
+    .create(type, name, description, quantity, state, district, contact, geopoint)
     .then(data => {
       if (data.statusCode != 201) {
         res.sendStatus(data.statusCode)
