@@ -367,6 +367,40 @@ app.post('/vendor/add', (req, res) => {
     .catch(err => handleError(res, err));
 });
 
+app.post('/volunteer/add', (req, res) => {
+  if (!req.body.type) {
+    return res.status(422).json({ errors: "Type of item must be provided"});
+  }
+  if (!types.includes(req.body.type)) {
+    return res.status(422).json({ errors: "Type of item must be one of " + types.toString()});
+  }
+  if (!req.body.name) {
+    return res.status(422).json({ errors: "Name of item must be provided"});
+  }
+  if (!req.body.contact) {
+    return res.status(422).json({ errors: "A method of conact must be provided"});
+  }
+  const type = req.body.type;
+  const name = req.body.name;
+  const description = req.body.description || '';
+  const quantity = req.body.quantity || 1;
+  const state = req.body.state || '';
+  const district = req.body.district || '';
+  const geopoint = req.body.geopoint || '';
+  const contact = req.body.contact;
+
+  volunteer
+    .create(type, name, description, quantity, state, district, contact, geopoint)
+    .then(data => {
+      if (data.statusCode != 201) {
+        res.sendStatus(data.statusCode)
+      } else {
+        res.send(data.data)
+      }
+    })
+    .catch(err => handleError(res, err));
+});
+
 /**
  * Update new resource
  *

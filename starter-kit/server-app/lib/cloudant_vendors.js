@@ -125,11 +125,11 @@ function find(type, partialName, userID) {
  * @return {Promise} - promise that will be resolved (or rejected)
  * when the call to the DB completes
  */
-function create(type, name, description, quantity, state, district, contact) {
+function create(type, name, description, quantity, state, district, contact, geopoint) {
     return new Promise((resolve, reject) => {
         let itemId = uuidv4();
         let secret_code = itemId;
-        let date = Date.now();
+        let datetime = new Date();
         let item = {
             _id: itemId,
             id: itemId,
@@ -141,7 +141,8 @@ function create(type, name, description, quantity, state, district, contact) {
             district: district,
             contact: contact,
             secret_code: secret_code,
-            date: date
+            geopoint: geopoint,
+            date: datetime.toISOString().slice(0,10)
         };
         db.insert(item, (err, result) => {
             if (err) {
