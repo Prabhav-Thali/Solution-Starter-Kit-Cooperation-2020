@@ -17,7 +17,7 @@ var cloudant = new Cloudant({
 
 // Cloudant DB reference
 let db;
-let db_name = "community_db";
+let db_name = "requests";
 
 /**
  * Connects to the Cloudant DB, creating it if does not already exist
@@ -69,6 +69,26 @@ const dbCloudantConnect = () => {
         throw err;
     });
 })();
+
+/**
+ * Find all resources.
+ * 
+ * @return {Promise} Promise - 
+ *  resolve(): all resource objects
+ *  reject(): the err object from the underlying data store
+ */
+function find() {
+    return new Promise((resolve, reject) => {
+      
+        db.list({include_docs:true}, (err, documents) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve({ data: JSON.stringify(documents.docs), statusCode: 200});
+            }
+        });
+    });
+}
 
 /**
  * Find all resources that match the specified partial name.
@@ -144,17 +164,19 @@ function deleteById(id, rev) {
  * @param {String} name - the name of the item
  * @param {String} description - the description of the item
  * @param {String} quantity - the quantity available 
- * @param {String} location - the GPS location of the item
+ * @param {String} state - the state
+ * @param {String} district - the district
  * @param {String} contact - the contact info 
- * @param {String} userID - the ID of the user 
+ * @param {String} secret_code - the secret code of the user 
  * 
  * @return {Promise} - promise that will be resolved (or rejected)
  * when the call to the DB completes
  */
-function create(type, name, description, quantity, location, contact, userID) {
+function create(type, name, description, quantity, state, district, contact) {
     return new Promise((resolve, reject) => {
         let itemId = uuidv4();
-        let whenCreated = Date.now();
+        let secret_code = itemId;
+        let date = Date.now();
         let item = {
             _id: itemId,
             id: itemId,
@@ -162,10 +184,11 @@ function create(type, name, description, quantity, location, contact, userID) {
             name: name,
             description: description,
             quantity: quantity,
-            location: location,
+            state: state,
+            district: district,
             contact: contact,
-            userID: userID,
-            whenCreated: whenCreated
+            secret_code: secret_code,
+            date: date
         };
         db.insert(item, (err, result) => {
             if (err) {

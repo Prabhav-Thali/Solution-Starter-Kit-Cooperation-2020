@@ -141,12 +141,9 @@ app.post('/api/message', (req, res) => {
  *
  * A list of resource objects will be returned (which can be an empty list)
  */
-app.get('/api/resource', (req, res) => {
-  const type = req.query.type;
-  const name = req.query.name;
-  const userID = req.query.userID;
+app.get('/get/requests', (req, res) => {
   cloudant
-    .find(type, name, userID)
+    .find()
     .then(data => {
       if (data.statusCode != 200) {
         res.sendStatus(data.statusCode)
@@ -174,8 +171,8 @@ app.get('/api/resource', (req, res) => {
  * 
  * The ID and rev of the resource will be returned if successful
  */
-let types = ["Food", "Other", "Help"]
-app.post('/api/resource', (req, res) => {
+let types = ["Food", "Other", "Medical"]
+app.post('/create/request', (req, res) => {
   if (!req.body.type) {
     return res.status(422).json({ errors: "Type of item must be provided"});
   }
@@ -191,13 +188,13 @@ app.post('/api/resource', (req, res) => {
   const type = req.body.type;
   const name = req.body.name;
   const description = req.body.description || '';
-  const userID = req.body.userID || '';
   const quantity = req.body.quantity || 1;
-  const location = req.body.location || '';
+  const state = req.body.state || '';
+  const district = req.body.district || '';
   const contact = req.body.contact;
 
   cloudant
-    .create(type, name, description, quantity, location, contact, userID)
+    .create(type, name, description, quantity, state, district, contact)
     .then(data => {
       if (data.statusCode != 201) {
         res.sendStatus(data.statusCode)
