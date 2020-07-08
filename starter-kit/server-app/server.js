@@ -1,6 +1,7 @@
 require('dotenv').config({silent: true})
 
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const assistant = require('./lib/assistant.js');
@@ -13,6 +14,8 @@ const vendor= require('./lib/cloudant_vendors.js');
 const volunteer= require('./lib/cloudant_volunteers.js');
 
 const app = express();
+
+app.use(cors());
 app.use(bodyParser.json());
 
 const testConnections = () => {
